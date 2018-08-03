@@ -22,11 +22,12 @@ class Range {
   // http://stackoverflow.com/questions/326679/choosing-an-attractive-linear-scale-for-a-graphs-y-axiss
   // This routine creates the Y axis values for a graph.
   niceScale (yMin, yMax, ticks = 10, toFixed) {
-    if (yMin === Number.MIN_VALUE && yMax === 0) {
+    if ((yMin === Number.MIN_VALUE && yMax === 0) || (!Utils.isNumber(yMin) && !Utils.isNumber(yMax))) {
       // when all values are 0
       yMin = 0
       yMax = 1
-      let justRange = this.justRange(yMin, yMax, 2)
+      ticks = 1
+      let justRange = this.justRange(yMin, yMax, ticks)
       return justRange
     }
 
@@ -142,6 +143,7 @@ class Range {
     const getMinYMaxY = (startingIndex, len) => {
       let maxY = -Number.MAX_VALUE
       let minY = Number.MIN_VALUE
+
       for (let i = startingIndex; i < len; i++) {
         gl.dataPoints = Math.max(gl.dataPoints, gl.series[i].length)
         if (Utils.isIE()) {
@@ -149,9 +151,12 @@ class Range {
         }
 
         for (let j = 0; j < gl.series[i].length; j++) {
-          if (gl.series[i][j] !== null && Utils.isInt(gl.series[i][j])) {
+          if (gl.series[i][j] !== null && Utils.isNumber(gl.series[i][j])) {
             maxY = Math.max(maxY, gl.series[i][j])
             minValInSeries = Math.min(minValInSeries, gl.series[i][j])
+            if (Utils.isFloat(gl.series[i][j])) {
+              gl.yValueDecimal = Math.max(gl.yValueDecimal, gl.series[i][j].toString().split('.')[1].length)
+            }
             if (minY > gl.series[i][j] && gl.series[i][j] < 0) {
               minY = gl.series[i][j]
             }
@@ -160,6 +165,7 @@ class Range {
           }
         }
       }
+
       return { minY, maxY }
     }
 
@@ -185,7 +191,7 @@ class Range {
         let poss = 0
         let negs = 0
         for (let i = 0; i < gl.series.length; i++) {
-          if (gl.series[i][j] !== null && Utils.isInt(gl.series[i][j])) {
+          if (gl.series[i][j] !== null && Utils.isNumber(gl.series[i][j])) {
             if (gl.series[i][j] > 0) {
               poss = poss + parseInt(gl.series[i][j])
             } else {
@@ -243,16 +249,13 @@ class Range {
       } else {
         ticksY = 8
       }
-      if (maxY < 8) {
-        ticksY = Math.floor(maxY)
-      }
 
-      if (maxY === -Number.MAX_VALUE) {
+      if (maxY === -Number.MAX_VALUE || !Utils.isNumber(maxY)) {
         // no value in series. draw blank grid
         gl.yAxisScale.push(this.justRange(
           0,
-          2,
-          2
+          1,
+          1
         ))
       } else {
         gl.allSeriesCollapsed = false
@@ -287,7 +290,7 @@ class Range {
       for (let i = 0; i < gl.series.length; i++) {
         if (gl.labels[i]) {
           for (let j = 0; j < gl.labels[i].length; j++) {
-            if (gl.labels[i][j] !== null && Utils.isInt(gl.labels[i][j])) {
+            if (gl.labels[i][j] !== null && Utils.isNumber(gl.labels[i][j])) {
               gl.maxX = Math.max(gl.maxX, gl.labels[i][j])
               gl.initialmaxX = Math.max(gl.maxX, gl.labels[i][j])
               gl.minX = Math.min(gl.minX, gl.labels[i][j])
@@ -381,7 +384,7 @@ class Range {
       for (let i = 0; i < gl.series.length; i++) {
         if (typeof gl.seriesZ[i] !== 'undefined') {
           for (let j = 0; j < gl.seriesZ[i].length; j++) {
-            if (gl.seriesZ[i][j] !== null && Utils.isInt(gl.seriesZ[i][j])) {
+            if (gl.seriesZ[i][j] !== null && Utils.isNumber(gl.seriesZ[i][j])) {
               gl.maxZ = Math.max(gl.maxZ, gl.seriesZ[i][j])
               gl.minZ = Math.min(gl.minZ, gl.seriesZ[i][j])
             }
